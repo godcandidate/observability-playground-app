@@ -7,12 +7,11 @@ import {
   ScrollText, 
   LineChart, 
   Network, 
-  Activity, 
-  ArrowRight,
-  AlertCircle,
-  CheckCircle2,
-  Timer
+  Activity,
+  Timer,
+  ArrowRight
 } from 'lucide-react';
+import { api } from './services/api';
 
 type TabType = 'memory' | 'cpu' | 'disk' | 'logs' | 'metrics' | 'traces';
 
@@ -311,176 +310,178 @@ function ResourceCard({
 
 function LogsPanel() {
   const [logs, setLogs] = useState<Array<{ level: string; message: string; timestamp: string }>>([]);
+  const [level, setLevel] = useState<'INFO' | 'WARN' | 'ERROR'>('INFO');
+  const [message, setMessage] = useState('Test log message');
+  const [count, setCount] = useState(1);
 
-  const generateLog = (level: 'INFO' | 'WARN' | 'ERROR') => {
-    const messages = {
-      INFO: [
-        'User logged in successfully',
-        'Cache updated',
-        'Background job completed',
-        'API request successful',
-        'Data sync completed'
-      ],
-      WARN: [
-        'High memory usage detected',
-        'API response time degraded',
-        'Cache miss rate increasing',
-        'Database connection pool near limit',
-        'Queue backlog detected'
-      ],
-      ERROR: [
-        'Failed to connect to database',
-        'API request timeout',
-        'Authentication failed',
-        'Invalid data format',
-        'Service unavailable'
-      ]
-    };
-
-    const message = messages[level][Math.floor(Math.random() * messages[level].length)];
-    const newLog = {
-      level,
-      message,
-      timestamp: new Date().toISOString()
-    };
-
-    setLogs(prev => [newLog, ...prev]);
-  };
-
-  const getLogColor = (level: string) => {
-    switch (level) {
-      case 'INFO': return 'text-green-600 bg-green-50';
-      case 'WARN': return 'text-yellow-600 bg-yellow-50';
-      case 'ERROR': return 'text-red-600 bg-red-50';
-      default: return 'text-gray-600 bg-gray-50';
+  const generateLogs = async () => {
+    try {
+      await api.generateLogs({ level, message, count });
+      const timestamp = new Date().toISOString();
+      const newLogs = Array(count).fill(null).map((_, i) => ({
+        level,
+        message: `${message} - ${i + 1}`,
+        timestamp
+      }));
+      setLogs(prev => [...newLogs, ...prev]);
+    } catch (error) {
+      console.error('Error generating logs:', error);
     }
   };
 
   return (
-    <div className="space-y-4">
-      <div className="flex gap-2">
-        <button
-          onClick={() => generateLog('INFO')}
-          className="px-4 py-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors duration-300"
-        >
-          INFO
-        </button>
-        <button
-          onClick={() => generateLog('WARN')}
-          className="px-4 py-2 bg-yellow-100 text-yellow-700 rounded-lg hover:bg-yellow-200 transition-colors duration-300"
-        >
-          WARN
-        </button>
-        <button
-          onClick={() => generateLog('ERROR')}
-          className="px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors duration-300"
-        >
-          ERROR
-        </button>
+    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="p-6 border-b border-gray-100">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Log Pattern Generator</h2>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Log Level</label>
+            <select
+              value={level}
+              onChange={(e) => setLevel(e.target.value as 'INFO' | 'WARN' | 'ERROR')}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            >
+              <option value="INFO">INFO</option>
+              <option value="WARN">WARN</option>
+              <option value="ERROR">ERROR</option>
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Message</label>
+            <input
+              type="text"
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Count</label>
+            <input
+              type="number"
+              value={count}
+              onChange={(e) => setCount(Math.max(1, parseInt(e.target.value)))}
+              min="1"
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          <button
+            onClick={generateLogs}
+            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Generate Logs
+          </button>
+        </div>
       </div>
 
-      <div className="h-96 overflow-y-auto bg-white rounded-lg border border-gray-200 p-4">
-        {logs.map((log, index) => (
-          <div
-            key={index}
-            className={`mb-2 p-2 rounded-lg font-mono text-sm ${getLogColor(log.level)}`}
-          >
-            <span className="text-gray-500">[{log.timestamp}]</span>{' '}
-            <span className="font-semibold">{log.level}:</span>{' '}
-            {log.message}
-          </div>
-        ))}
+      <div className="p-6">
+        <h3 className="text-sm font-medium text-gray-600 mb-4">Generated Logs</h3>
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {logs.map((log, index) => (
+            <div
+              key={index}
+              className={`p-3 rounded-md ${
+                log.level === 'INFO' ? 'bg-blue-50 text-blue-700' :
+                log.level === 'WARN' ? 'bg-yellow-50 text-yellow-700' :
+                'bg-red-50 text-red-700'
+              }`}
+            >
+              <div className="text-xs opacity-75">{log.timestamp}</div>
+              <div className="font-mono">[{log.level}] {log.message}</div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
 }
 
 function MetricsPanel() {
-  const [metrics, setMetrics] = useState<Array<{ name: string; value: string; timestamp: string }>>([]);
-  const [metricName, setMetricName] = useState('');
-  const [metricValue, setMetricValue] = useState('');
-  const [isEmitting, setIsEmitting] = useState(false);
+  const [metrics, setMetrics] = useState<Array<{ name: string; value: number; unit: string; timestamp: string }>>([]);
+  const [name, setName] = useState('custom_metric');
+  const [value, setValue] = useState(1.0);
+  const [unit, setUnit] = useState('Count');
 
   const emitMetric = async () => {
-    if (!metricName || !metricValue) return;
-
-    setIsEmitting(true);
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    const newMetric = {
-      name: metricName,
-      value: metricValue,
-      timestamp: new Date().toISOString()
-    };
-
-    setMetrics(prev => [newMetric, ...prev]);
-    setMetricName('');
-    setMetricValue('');
-    setIsEmitting(false);
+    try {
+      await api.emitMetric({ name, value, unit });
+      const timestamp = new Date().toISOString();
+      setMetrics(prev => [{
+        name,
+        value,
+        unit,
+        timestamp
+      }, ...prev]);
+    } catch (error) {
+      console.error('Error emitting metric:', error);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Metric Name
-          </label>
-          <input
-            type="text"
-            value={metricName}
-            onChange={(e) => setMetricName(e.target.value)}
-            placeholder="e.g., request_count"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Metric Value
-          </label>
-          <input
-            type="text"
-            value={metricValue}
-            onChange={(e) => setMetricValue(e.target.value)}
-            placeholder="e.g., 100"
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
+    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="p-6 border-b border-gray-100">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Metric Pattern Generator</h2>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Metric Name</label>
+            <input
+              type="text"
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Value</label>
+            <input
+              type="number"
+              value={value}
+              onChange={(e) => setValue(parseFloat(e.target.value))}
+              step="0.1"
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Unit</label>
+            <select
+              value={unit}
+              onChange={(e) => setUnit(e.target.value)}
+              className="w-full p-2 border border-gray-300 rounded-md"
+            >
+              <option value="Count">Count</option>
+              <option value="Seconds">Seconds</option>
+              <option value="Bytes">Bytes</option>
+              <option value="Percent">Percent</option>
+            </select>
+          </div>
+
+          <button
+            onClick={emitMetric}
+            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Emit Metric
+          </button>
         </div>
       </div>
 
-      <button
-        onClick={emitMetric}
-        disabled={isEmitting || !metricName || !metricValue}
-        className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 
-          ${isEmitting || !metricName || !metricValue
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-            : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-      >
-        {isEmitting ? (
-          <>
-            <Timer className="w-5 h-5 animate-spin" />
-            Emitting Metric...
-          </>
-        ) : (
-          'Emit Metric'
-        )}
-      </button>
-
-      <div className="bg-white rounded-lg border border-gray-200 p-4">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Metrics</h3>
-        <div className="space-y-2">
+      <div className="p-6">
+        <h3 className="text-sm font-medium text-gray-600 mb-4">Emitted Metrics</h3>
+        <div className="space-y-2 max-h-96 overflow-y-auto">
           {metrics.map((metric, index) => (
             <div
               key={index}
-              className="p-3 bg-blue-50 rounded-lg text-sm"
+              className="p-3 rounded-md bg-gray-50"
             >
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="w-5 h-5 text-blue-600" />
-                <span className="font-medium text-blue-700">{metric.name}</span>
-                <span className="text-blue-600">= {metric.value}</span>
-              </div>
-              <div className="text-gray-500 text-xs mt-1">
-                {new Date(metric.timestamp).toLocaleString()}
+              <div className="text-xs text-gray-500">{metric.timestamp}</div>
+              <div className="font-mono">
+                {metric.name} = {metric.value} {metric.unit}
               </div>
             </div>
           ))}
@@ -492,87 +493,83 @@ function MetricsPanel() {
 
 function TracesPanel() {
   const [traces, setTraces] = useState<Array<{
-    id: string;
-    services: Array<{ name: string; duration: number; status: 'success' | 'error' }>;
-    timestamp: string;
+    service: string;
+    latency: number;
+    status: string;
+    timestamp: number;
   }>>([]);
-  const [isSimulating, setIsSimulating] = useState(false);
+  const [services, setServices] = useState(3);
+  const [errorRate, setErrorRate] = useState(0.1);
 
-  const simulateTrace = async () => {
-    setIsSimulating(true);
-
-    const services = [
-      { name: 'API Gateway', duration: Math.floor(Math.random() * 100) + 20 },
-      { name: 'Auth Service', duration: Math.floor(Math.random() * 150) + 50 },
-      { name: 'User Service', duration: Math.floor(Math.random() * 200) + 100 },
-      { name: 'Database', duration: Math.floor(Math.random() * 100) + 30 }
-    ].map(service => ({
-      ...service,
-      status: Math.random() > 0.9 ? 'error' as const : 'success' as const
-    }));
-
-    await new Promise(resolve => setTimeout(resolve, 2000));
-
-    const newTrace = {
-      id: Math.random().toString(36).substr(2, 9),
-      services,
-      timestamp: new Date().toISOString()
-    };
-
-    setTraces(prev => [newTrace, ...prev]);
-    setIsSimulating(false);
+  const generateTraces = async () => {
+    try {
+      const response = await api.generateTraces({ services, errorRate });
+      if (response.traces) {
+        setTraces(prev => [...response.traces, ...prev]);
+      }
+    } catch (error) {
+      console.error('Error generating traces:', error);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <button
-        onClick={simulateTrace}
-        disabled={isSimulating}
-        className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 
-          ${isSimulating
-            ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-            : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-      >
-        {isSimulating ? (
-          <>
-            <Timer className="w-5 h-5 animate-spin" />
-            Simulating Trace...
-          </>
-        ) : (
-          'Simulate New Trace'
-        )}
-      </button>
-
-      <div className="space-y-4">
-        {traces.map((trace) => (
-          <div key={trace.id} className="bg-white rounded-lg border border-gray-200 p-4">
-            <div className="flex items-center justify-between mb-4">
-              <div className="text-sm text-gray-500">Trace ID: {trace.id}</div>
-              <div className="text-sm text-gray-500">{new Date(trace.timestamp).toLocaleString()}</div>
-            </div>
-            <div className="space-y-2">
-              {trace.services.map((service, index) => (
-                <div key={index} className="relative">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-sm font-medium text-gray-700">{service.name}</span>
-                    <span className="text-sm text-gray-500">{service.duration}ms</span>
-                    {service.status === 'error' && (
-                      <AlertCircle className="w-4 h-4 text-red-500" />
-                    )}
-                  </div>
-                  <div className="h-2 bg-gray-100 rounded-full overflow-hidden">
-                    <div
-                      className={`h-full rounded-full transition-all duration-1000 ${
-                        service.status === 'success' ? 'bg-green-500' : 'bg-red-500'
-                      }`}
-                      style={{ width: `${(service.duration / 300) * 100}%` }}
-                    />
-                  </div>
-                </div>
-              ))}
-            </div>
+    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      <div className="p-6 border-b border-gray-100">
+        <h2 className="text-lg font-semibold text-gray-800 mb-4">Trace Pattern Generator</h2>
+        
+        <div className="space-y-4">
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Number of Services</label>
+            <input
+              type="number"
+              value={services}
+              onChange={(e) => setServices(Math.max(1, parseInt(e.target.value)))}
+              min="1"
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
           </div>
-        ))}
+
+          <div>
+            <label className="block text-sm font-medium text-gray-600 mb-2">Error Rate (0-1)</label>
+            <input
+              type="number"
+              value={errorRate}
+              onChange={(e) => setErrorRate(Math.min(1, Math.max(0, parseFloat(e.target.value))))}
+              step="0.1"
+              min="0"
+              max="1"
+              className="w-full p-2 border border-gray-300 rounded-md"
+            />
+          </div>
+
+          <button
+            onClick={generateTraces}
+            className="w-full py-2 px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+          >
+            Generate Traces
+          </button>
+        </div>
+      </div>
+
+      <div className="p-6">
+        <h3 className="text-sm font-medium text-gray-600 mb-4">Generated Traces</h3>
+        <div className="space-y-2 max-h-96 overflow-y-auto">
+          {traces.map((trace, index) => (
+            <div
+              key={index}
+              className={`p-3 rounded-md ${
+                trace.status === 'success' ? 'bg-green-50 text-green-700' : 'bg-red-50 text-red-700'
+              }`}
+            >
+              <div className="text-xs opacity-75">
+                {new Date(trace.timestamp * 1000).toISOString()}
+              </div>
+              <div className="font-mono">
+                {trace.service} - {trace.latency.toFixed(3)}s - {trace.status}
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     </div>
   );
@@ -586,75 +583,73 @@ function Dashboard() {
     disk: { percentage: 0, duration: '00:30', isSimulating: false, status: 'idle' as const }
   });
 
-  const handlePercentageChange = (resource: 'memory' | 'cpu' | 'disk', value: number) => {
-    setResourceStates(prev => ({
-      ...prev,
-      [resource]: {
-        ...prev[resource],
-        percentage: value,
-        status: prev[resource].isSimulating ? updateResourceStatus(value) : 'idle'
-      }
-    }));
-  };
-
-  const handleDurationChange = (resource: 'memory' | 'cpu' | 'disk', value: string) => {
-    setResourceStates(prev => ({
-      ...prev,
-      [resource]: {
-        ...prev[resource],
-        duration: value
-      }
-    }));
-  };
-
-  const updateResourceStatus = (percentage: number) => {
-    if (percentage < 50) return 'good';
-    if (percentage < 80) return 'warning';
-    return 'critical';
-  };
-
-  const simulateResource = async (resource: 'memory' | 'cpu' | 'disk') => {
-    if (resourceStates[resource].isSimulating) return;
+  const handleSimulation = async (type: 'memory' | 'cpu' | 'disk') => {
+    const state = resourceStates[type];
+    if (state.isSimulating) return;
 
     try {
-      const [minutes, seconds] = resourceStates[resource].duration.split(':').map(Number);
-      if (isNaN(minutes) || isNaN(seconds)) {
-        console.error('Invalid duration format');
-        return;
+      setResourceStates(prev => ({
+        ...prev,
+        [type]: { ...prev[type], isSimulating: true }
+      }));
+
+      let response;
+      const params = {
+        percentage: state.percentage,
+        duration: state.duration
+      };
+
+      switch (type) {
+        case 'memory':
+          response = await api.simulateMemory(params);
+          break;
+        case 'cpu':
+          response = await api.simulateCPU(params);
+          break;
+        case 'disk':
+          response = await api.simulateDisk(params);
+          break;
       }
 
-      const status = updateResourceStatus(resourceStates[resource].percentage);
-      setResourceStates(prev => ({
-        ...prev,
-        [resource]: { 
-          ...prev[resource], 
-          isSimulating: true,
-          status
-        }
-      }));
+      if (response.status) {
+        setResourceStates(prev => ({
+          ...prev,
+          [type]: { ...prev[type], status: response.status }
+        }));
+      }
 
+      // Reset after duration
+      const [minutes, seconds] = state.duration.split(':').map(Number);
       const totalMs = (minutes * 60 + seconds) * 1000;
-      await new Promise(resolve => setTimeout(resolve, totalMs));
 
-      setResourceStates(prev => ({
-        ...prev,
-        [resource]: { 
-          ...prev[resource], 
-          isSimulating: false,
-          status: 'idle'
-        }
-      }));
+      setTimeout(() => {
+        setResourceStates(prev => ({
+          ...prev,
+          [type]: { ...prev[type], isSimulating: false, status: 'idle' }
+        }));
+      }, totalMs);
+
     } catch (error) {
-      console.error('Simulation error:', error);
+      console.error(`Error simulating ${type}:`, error);
       setResourceStates(prev => ({
         ...prev,
-        [resource]: { 
-          ...prev[resource], 
-          isSimulating: false,
-          status: 'idle'
-        }
+        [type]: { ...prev[type], isSimulating: false, status: 'idle' }
       }));
     }
+  };
+
+  const handlePercentageChange = (type: 'memory' | 'cpu' | 'disk', value: number) => {
+    setResourceStates(prev => ({
+      ...prev,
+      [type]: { ...prev[type], percentage: value }
+    }));
+  };
+
+  const handleDurationChange = (type: 'memory' | 'cpu' | 'disk', value: string) => {
+    setResourceStates(prev => ({
+      ...prev,
+      [type]: { ...prev[type], duration: value }
+    }));
   };
 
   const tabs = [
@@ -668,13 +663,13 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200 sticky top-0 z-10 backdrop-blur-sm bg-white/90">
-        <div className="max-w-7xl mx-auto px-4 lg:px-8">
-          {/* Header Content */}
-          <div className="py-6">
-            <div className="flex items-center gap-3">
-              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-500/20">
-                <Activity className="w-6 h-6 text-white" />
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200">
+        <div className="max-w-7xl mx-auto">
+          <div className="py-6 px-4 sm:px-6 lg:px-8">
+            <div className="flex items-center gap-4">
+              <div className="p-2 rounded-lg bg-blue-100 text-blue-700">
+                <Activity className="w-6 h-6" />
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
@@ -687,9 +682,9 @@ function Dashboard() {
             </div>
           </div>
 
-          {/* Tabs Navigation */}
-          <div className="flex items-center -mb-px">
-            <div className="flex gap-8">
+          {/* Tabs */}
+          <div className="px-4 sm:px-6 lg:px-8">
+            <nav className="flex space-x-4 border-b border-gray-200">
               {tabs.map(tab => (
                 <Tab
                   key={tab.key}
@@ -699,11 +694,12 @@ function Dashboard() {
                   onClick={() => setActiveTab(tab.key)}
                 />
               ))}
-            </div>
+            </nav>
           </div>
         </div>
       </header>
 
+      {/* Main Content */}
       <main className="max-w-7xl mx-auto py-8 px-4 lg:px-8 min-h-[calc(100vh-12rem)]">
         {activeTab === 'memory' && (
           <ResourceCard
@@ -713,7 +709,7 @@ function Dashboard() {
             duration={resourceStates.memory.duration}
             onPercentageChange={(value) => handlePercentageChange('memory', value)}
             onDurationChange={(value) => handleDurationChange('memory', value)}
-            onSimulate={() => simulateResource('memory')}
+            onSimulate={() => handleSimulation('memory')}
             isSimulating={resourceStates.memory.isSimulating}
             status={resourceStates.memory.status}
           />
@@ -727,7 +723,7 @@ function Dashboard() {
             duration={resourceStates.cpu.duration}
             onPercentageChange={(value) => handlePercentageChange('cpu', value)}
             onDurationChange={(value) => handleDurationChange('cpu', value)}
-            onSimulate={() => simulateResource('cpu')}
+            onSimulate={() => handleSimulation('cpu')}
             isSimulating={resourceStates.cpu.isSimulating}
             status={resourceStates.cpu.status}
           />
@@ -741,7 +737,7 @@ function Dashboard() {
             duration={resourceStates.disk.duration}
             onPercentageChange={(value) => handlePercentageChange('disk', value)}
             onDurationChange={(value) => handleDurationChange('disk', value)}
-            onSimulate={() => simulateResource('disk')}
+            onSimulate={() => handleSimulation('disk')}
             isSimulating={resourceStates.disk.isSimulating}
             status={resourceStates.disk.status}
           />
