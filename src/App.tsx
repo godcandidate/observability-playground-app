@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { motion } from 'framer-motion';
 import { 
   Cpu, 
   MemoryStick, 
@@ -26,14 +27,29 @@ function Tab({ icon: Icon, label, isActive, onClick }: TabProps) {
   return (
     <button
       onClick={onClick}
-      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300 ${
-        isActive 
-          ? 'bg-blue-100 text-blue-700 font-medium' 
-          : 'text-gray-600 hover:bg-gray-100'
-      }`}
+      className={`
+        relative flex items-center gap-2 px-6 py-3
+        transition-all duration-300 overflow-hidden
+        ${isActive 
+          ? 'text-blue-600 font-medium' 
+          : 'text-gray-500 hover:text-gray-700'}
+      `}
     >
-      <Icon className="w-5 h-5" />
-      {label}
+      {/* Tab Content */}
+      <Icon className={`w-5 h-5 transition-transform duration-300 ${isActive ? 'scale-110' : ''}`} />
+      <span className={`transition-transform duration-300 ${isActive ? 'transform -translate-y-0.5' : ''}`}>
+        {label}
+      </span>
+
+      {/* Active Indicator */}
+      {isActive && (
+        <motion.div
+          layoutId="activeTab"
+          className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-600"
+          initial={false}
+          transition={{ type: "spring", stiffness: 500, damping: 30 }}
+        />
+      )}
     </button>
   );
 }
@@ -59,71 +75,217 @@ function ResourceCard({
   isSimulating?: boolean;
   status?: 'idle' | 'good' | 'warning' | 'critical';
 }) {
-  const statusColors = {
-    idle: 'bg-gray-100 text-gray-600',
-    good: 'bg-green-100 text-green-600',
-    warning: 'bg-yellow-100 text-yellow-600',
-    critical: 'bg-red-100 text-red-600'
+  const statusConfig = {
+    idle: {
+      colors: 'bg-gray-100 text-gray-600 border-gray-200',
+      iconColor: 'text-gray-400',
+      gradient: 'from-gray-50 to-gray-100'
+    },
+    good: {
+      colors: 'bg-green-100 text-green-600 border-green-200',
+      iconColor: 'text-green-500',
+      gradient: 'from-green-50 to-green-100'
+    },
+    warning: {
+      colors: 'bg-yellow-100 text-yellow-600 border-yellow-200',
+      iconColor: 'text-yellow-500',
+      gradient: 'from-yellow-50 to-yellow-100'
+    },
+    critical: {
+      colors: 'bg-red-100 text-red-600 border-red-200',
+      iconColor: 'text-red-500',
+      gradient: 'from-red-50 to-red-100'
+    }
   };
 
-  const iconAnimation = isSimulating ? 'animate-pulse' : '';
+  const currentStatus = statusConfig[status];
 
   return (
-    <div className="bg-white rounded-xl shadow-lg p-6 border border-gray-100">
-      <div className="flex items-center gap-4 mb-6">
-        <div className={`p-3 rounded-lg transition-colors duration-300 ${statusColors[status]} ${iconAnimation}`}>
-          <Icon className="w-8 h-8" />
+    <div className="bg-white rounded-xl shadow-lg border border-gray-200 overflow-hidden">
+      {/* Header */}
+      <div className="px-6 py-4 border-b border-gray-100">
+        <div className="flex items-center gap-3">
+          <div className={`p-2 rounded-lg ${currentStatus.colors}`}>
+            <Icon className="w-5 h-5" />
+          </div>
+          <h2 className="text-lg font-semibold text-gray-800">{title}</h2>
         </div>
-        <h2 className="text-xl font-semibold text-gray-800">{title}</h2>
       </div>
 
-      <div className="space-y-4">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Usage Percentage
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="100"
-            value={percentage}
-            onChange={(e) => onPercentageChange(Number(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-          />
-          <div className="text-sm text-gray-600 mt-1">{percentage}%</div>
+      {/* Content */}
+      <div className="flex flex-col md:flex-row md:items-stretch">
+        {/* Left Side - Controls */}
+        <div className="flex-1 p-6 space-y-6 border-r border-gray-100">
+          {/* Circular Percentage Indicator */}
+          <div className="flex flex-col items-center space-y-4">
+            <div className="relative w-32 h-32">
+              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
+                {/* Background Circle */}
+                <circle
+                  className="text-gray-200"
+                  strokeWidth="8"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r="44"
+                  cx="50"
+                  cy="50"
+                />
+                {/* Progress Circle */}
+                <motion.circle
+                  className={status === 'idle' ? 'text-gray-400' : 
+                    status === 'good' ? 'text-green-500' : 
+                    status === 'warning' ? 'text-yellow-500' : 'text-red-500'}
+                  strokeWidth="8"
+                  strokeLinecap="round"
+                  stroke="currentColor"
+                  fill="transparent"
+                  r="44"
+                  cx="50"
+                  cy="50"
+                  style={{
+                    pathLength: 1,
+                    strokeDasharray: '1 1',
+                    strokeDashoffset: 1 - (percentage / 100)
+                  }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-2xl font-bold text-gray-700">{percentage}%</span>
+              </div>
+            </div>
+
+            {/* Percentage Control */}
+            <div className="w-full space-y-2">
+              <input
+                type="range"
+                min="0"
+                max="100"
+                value={percentage}
+                onChange={(e) => {
+                  const value = Number(e.target.value);
+                  onPercentageChange(value);
+                }}
+                className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer"
+                style={{
+                  background: `linear-gradient(to right, 
+                    ${status === 'idle' ? '#9CA3AF' : 
+                      status === 'good' ? '#22C55E' : 
+                      status === 'warning' ? '#EAB308' : 
+                      '#EF4444'} 0%, 
+                    ${status === 'idle' ? '#9CA3AF' : 
+                      status === 'good' ? '#22C55E' : 
+                      status === 'warning' ? '#EAB308' : 
+                      '#EF4444'} ${percentage}%, 
+                    #E5E7EB ${percentage}%, 
+                    #E5E7EB 100%)`
+                }}
+              />
+              <div className="flex justify-between text-sm text-gray-600">
+                <span>0%</span>
+                <span>50%</span>
+                <span>100%</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Duration Input */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-2">
+              Duration (MM:ss)
+            </label>
+            <input
+              type="text"
+              pattern="[0-9]{2}:[0-9]{2}"
+              placeholder="00:30"
+              value={duration}
+              onChange={(e) => {
+                const value = e.target.value;
+                if (value.length <= 5) {
+                  let newValue = value;
+                  // Auto-add colon if user types 4 numbers
+                  if (value.length === 4 && !value.includes(':')) {
+                    newValue = value.slice(0, 2) + ':' + value.slice(2);
+                  }
+                  // Only allow numbers and colon
+                  if (/^[0-9:]*$/.test(newValue)) {
+                    onDurationChange(newValue);
+                  }
+                }
+              }}
+              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            />
+          </div>
+
+          {/* Simulation Button */}
+          <button
+            onClick={onSimulate}
+            disabled={isSimulating}
+            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium shadow-sm transition-all duration-300
+              ${isSimulating 
+                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md active:transform active:scale-[0.98]'}`}
+          >
+            {isSimulating ? (
+              <>
+                <Timer className="w-5 h-5 animate-spin" />
+                <span>Simulating...</span>
+              </>
+            ) : (
+              <>
+                <Activity className="w-5 h-5" />
+                <span>Start Simulation</span>
+              </>
+            )}
+          </button>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Duration (MM:ss)
-          </label>
-          <input
-            type="text"
-            pattern="[0-9]{2}:[0-9]{2}"
-            placeholder="00:30"
-            value={duration}
-            onChange={(e) => onDurationChange(e.target.value)}
-            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-          />
-        </div>
+        {/* Right Side - Animation */}
+        <div className="flex-1 p-6 flex flex-col items-center justify-center space-y-6 bg-gray-50">
+          <motion.div
+            className="p-8 rounded-full bg-white border-4 transition-colors duration-500"
+            style={{
+              borderColor: status === 'idle' ? '#9CA3AF' : 
+                         status === 'good' ? '#22C55E' : 
+                         status === 'warning' ? '#EAB308' : '#EF4444'
+            }}
+            animate={{
+              scale: isSimulating ? [1, 1.1, 0.9, 1] : 1,
+              rotate: status === 'critical' ? [-5, 5, -5, 5, -5, 0] : 0
+            }}
+            transition={{
+              duration: status === 'critical' ? 0.5 : 2,
+              repeat: isSimulating ? Infinity : 0,
+              ease: status === 'critical' ? 'easeInOut' : 'easeOut'
+            }}
+          >
+            <Icon className={`w-24 h-24 ${currentStatus.iconColor} transition-colors duration-500`} />
+          </motion.div>
 
-        <button
-          onClick={onSimulate}
-          disabled={isSimulating}
-          className={`w-full flex items-center justify-center gap-2 px-4 py-2 rounded-lg font-medium transition-all duration-300 
-            ${isSimulating 
-              ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-              : 'bg-blue-600 text-white hover:bg-blue-700'}`}
-        >
-          {isSimulating ? (
-            <>
-              <Timer className="w-5 h-5 animate-spin" />
-              Simulating...
-            </>
-          ) : (
-            'Start Simulation'
+          {/* Status Message */}
+          {isSimulating && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="text-center"
+            >
+              <motion.p 
+                className={`text-xl font-bold mb-2 ${status === 'good' ? 'text-green-600' : 
+                  status === 'warning' ? 'text-yellow-600' : 
+                  status === 'critical' ? 'text-red-600' : 'text-gray-600'}`}
+              >
+                {status === 'good' ? '✨ Optimal Performance' :
+                 status === 'warning' ? '⚠️ Performance Alert' :
+                 status === 'critical' ? '🚨 Critical Warning!' : '🔄 Monitoring...'}
+              </motion.p>
+              <p className="text-sm text-gray-600">
+                {status === 'good' ? 'System is running smoothly and efficiently' :
+                 status === 'warning' ? 'Resource usage is approaching critical levels' :
+                 status === 'critical' ? 'Immediate action required - System at risk!' :
+                 'Analyzing system metrics...'}
+              </p>
+            </motion.div>
           )}
-        </button>
+        </div>
       </div>
     </div>
   );
@@ -406,25 +568,75 @@ function Dashboard() {
     disk: { percentage: 0, duration: '00:30', isSimulating: false, status: 'idle' as const }
   });
 
-  const simulateResource = async (resource: 'memory' | 'cpu' | 'disk') => {
+  const handlePercentageChange = (resource: 'memory' | 'cpu' | 'disk', value: number) => {
     setResourceStates(prev => ({
       ...prev,
-      [resource]: { ...prev[resource], isSimulating: true }
-    }));
-
-    const [minutes, seconds] = resourceStates[resource].duration.split(':').map(Number);
-    const totalMs = (minutes * 60 + seconds) * 1000;
-    
-    await new Promise(resolve => setTimeout(resolve, totalMs));
-
-    setResourceStates(prev => ({
-      ...prev,
-      [resource]: { 
-        ...prev[resource], 
-        isSimulating: false,
-        status: prev[resource].percentage < 50 ? 'good' : prev[resource].percentage < 80 ? 'warning' : 'critical'
+      [resource]: {
+        ...prev[resource],
+        percentage: value,
+        status: prev[resource].isSimulating ? updateResourceStatus(value) : 'idle'
       }
     }));
+  };
+
+  const handleDurationChange = (resource: 'memory' | 'cpu' | 'disk', value: string) => {
+    setResourceStates(prev => ({
+      ...prev,
+      [resource]: {
+        ...prev[resource],
+        duration: value
+      }
+    }));
+  };
+
+  const updateResourceStatus = (percentage: number) => {
+    if (percentage < 50) return 'good';
+    if (percentage < 80) return 'warning';
+    return 'critical';
+  };
+
+  const simulateResource = async (resource: 'memory' | 'cpu' | 'disk') => {
+    if (resourceStates[resource].isSimulating) return;
+
+    try {
+      const [minutes, seconds] = resourceStates[resource].duration.split(':').map(Number);
+      if (isNaN(minutes) || isNaN(seconds)) {
+        console.error('Invalid duration format');
+        return;
+      }
+
+      const status = updateResourceStatus(resourceStates[resource].percentage);
+      setResourceStates(prev => ({
+        ...prev,
+        [resource]: { 
+          ...prev[resource], 
+          isSimulating: true,
+          status
+        }
+      }));
+
+      const totalMs = (minutes * 60 + seconds) * 1000;
+      await new Promise(resolve => setTimeout(resolve, totalMs));
+
+      setResourceStates(prev => ({
+        ...prev,
+        [resource]: { 
+          ...prev[resource], 
+          isSimulating: false,
+          status: 'idle'
+        }
+      }));
+    } catch (error) {
+      console.error('Simulation error:', error);
+      setResourceStates(prev => ({
+        ...prev,
+        [resource]: { 
+          ...prev[resource], 
+          isSimulating: false,
+          status: 'idle'
+        }
+      }));
+    }
   };
 
   const tabs = [
@@ -438,51 +650,51 @@ function Dashboard() {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <header className="bg-white border-b border-gray-200">
-        <div className="max-w-7xl mx-auto px-4 py-6">
-          <div className="flex items-center gap-3 mb-6">
-            <div className="p-2 bg-blue-50 rounded-lg">
-              <Activity className="w-6 h-6 text-blue-600" />
-            </div>
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Observability Dashboard</h1>
-              <p className="text-sm text-gray-600">Monitor and test your system's observability features</p>
+      <header className="bg-white border-b border-gray-200 sticky top-0 z-10 backdrop-blur-sm bg-white/90">
+        <div className="max-w-7xl mx-auto px-4 lg:px-8">
+          {/* Header Content */}
+          <div className="py-6">
+            <div className="flex items-center gap-3">
+              <div className="p-2.5 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg shadow-blue-500/20">
+                <Activity className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-2xl font-bold text-gray-900">
+                  Observability Dashboard
+                </h1>
+                <p className="text-sm text-gray-600">
+                  Monitor and test your system's observability features
+                </p>
+              </div>
             </div>
           </div>
 
-          <div className="flex gap-2 overflow-x-auto pb-2">
-            {tabs.map(tab => (
-              <Tab
-                key={tab.key}
-                icon={tab.icon}
-                label={tab.label}
-                isActive={activeTab === tab.key}
-                onClick={() => setActiveTab(tab.key)}
-              />
-            ))}
+          {/* Tabs Navigation */}
+          <div className="flex items-center -mb-px">
+            <div className="flex gap-8">
+              {tabs.map(tab => (
+                <Tab
+                  key={tab.key}
+                  icon={tab.icon}
+                  label={tab.label}
+                  isActive={activeTab === tab.key}
+                  onClick={() => setActiveTab(tab.key)}
+                />
+              ))}
+            </div>
           </div>
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto py-8 px-4">
+      <main className="max-w-7xl mx-auto py-8 px-4 lg:px-8 min-h-[calc(100vh-12rem)]">
         {activeTab === 'memory' && (
           <ResourceCard
             title="Memory Usage"
             icon={MemoryStick}
             percentage={resourceStates.memory.percentage}
             duration={resourceStates.memory.duration}
-            onPercentageChange={(value) => 
-              setResourceStates(prev => ({
-                ...prev,
-                memory: { ...prev.memory, percentage: value }
-              }))
-            }
-            onDurationChange={(value) =>
-              setResourceStates(prev => ({
-                ...prev,
-                memory: { ...prev.memory, duration: value }
-              }))
-            }
+            onPercentageChange={(value) => handlePercentageChange('memory', value)}
+            onDurationChange={(value) => handleDurationChange('memory', value)}
             onSimulate={() => simulateResource('memory')}
             isSimulating={resourceStates.memory.isSimulating}
             status={resourceStates.memory.status}
@@ -495,18 +707,8 @@ function Dashboard() {
             icon={Cpu}
             percentage={resourceStates.cpu.percentage}
             duration={resourceStates.cpu.duration}
-            onPercentageChange={(value) =>
-              setResourceStates(prev => ({
-                ...prev,
-                cpu: { ...prev.cpu, percentage: value }
-              }))
-            }
-            onDurationChange={(value) =>
-              setResourceStates(prev => ({
-                ...prev,
-                cpu: { ...prev.cpu, duration: value }
-              }))
-            }
+            onPercentageChange={(value) => handlePercentageChange('cpu', value)}
+            onDurationChange={(value) => handleDurationChange('cpu', value)}
             onSimulate={() => simulateResource('cpu')}
             isSimulating={resourceStates.cpu.isSimulating}
             status={resourceStates.cpu.status}
@@ -519,18 +721,8 @@ function Dashboard() {
             icon={HardDrive}
             percentage={resourceStates.disk.percentage}
             duration={resourceStates.disk.duration}
-            onPercentageChange={(value) =>
-              setResourceStates(prev => ({
-                ...prev,
-                disk: { ...prev.disk, percentage: value }
-              }))
-            }
-            onDurationChange={(value) =>
-              setResourceStates(prev => ({
-                ...prev,
-                disk: { ...prev.disk, duration: value }
-              }))
-            }
+            onPercentageChange={(value) => handlePercentageChange('disk', value)}
+            onDurationChange={(value) => handleDurationChange('disk', value)}
             onSimulate={() => simulateResource('disk')}
             isSimulating={resourceStates.disk.isSimulating}
             status={resourceStates.disk.status}
