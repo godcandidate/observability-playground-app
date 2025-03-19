@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { 
   Cpu, 
@@ -189,54 +189,64 @@ function ResourceCard({
           </div>
 
           {/* Duration Input */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Duration (MM:ss)
+          <div className="w-48 mx-auto">
+            <label className="block text-sm font-medium text-gray-600 mb-2 text-center">
+              Test Duration (MM:ss)
             </label>
-            <input
-              type="text"
-              pattern="[0-9]{2}:[0-9]{2}"
-              placeholder="00:30"
-              value={duration}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value.length <= 5) {
-                  let newValue = value;
-                  // Auto-add colon if user types 4 numbers
-                  if (value.length === 4 && !value.includes(':')) {
-                    newValue = value.slice(0, 2) + ':' + value.slice(2);
+            <div className="relative">
+              <input
+                type="text"
+                pattern="[0-9]{2}:[0-9]{2}"
+                placeholder="00:30"
+                value={duration}
+                onChange={(e) => {
+                  const value = e.target.value;
+                  if (value.length <= 5) {
+                    let newValue = value;
+                    // Auto-add colon if user types 4 numbers
+                    if (value.length === 4 && !value.includes(':')) {
+                      newValue = value.slice(0, 2) + ':' + value.slice(2);
+                    }
+                    // Only allow numbers and colon
+                    if (/^[0-9:]*$/.test(newValue)) {
+                      onDurationChange(newValue);
+                    }
                   }
-                  // Only allow numbers and colon
-                  if (/^[0-9:]*$/.test(newValue)) {
-                    onDurationChange(newValue);
-                  }
-                }
-              }}
-              className="w-full px-4 py-2.5 bg-white border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-            />
+                }}
+                className="w-full px-4 py-2 text-center text-lg bg-white border border-gray-200 rounded-full
+                           shadow-sm focus:ring-2 focus:ring-blue-100 focus:border-blue-400 transition-all
+                           placeholder-gray-400 font-light"
+              />
+              <div className="absolute inset-y-0 right-3 flex items-center pointer-events-none">
+                <Timer className="w-4 h-4 text-gray-400" />
+              </div>
+            </div>
           </div>
 
           {/* Simulation Button */}
-          <button
-            onClick={onSimulate}
-            disabled={isSimulating}
-            className={`w-full flex items-center justify-center gap-2 px-4 py-3 rounded-lg font-medium shadow-sm transition-all duration-300
-              ${isSimulating 
-                ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
-                : 'bg-blue-600 text-white hover:bg-blue-700 hover:shadow-md active:transform active:scale-[0.98]'}`}
-          >
-            {isSimulating ? (
-              <>
-                <Timer className="w-5 h-5 animate-spin" />
-                <span>Simulating...</span>
-              </>
-            ) : (
-              <>
-                <Activity className="w-5 h-5" />
-                <span>Start Simulation</span>
-              </>
-            )}
-          </button>
+          <div className="flex justify-center">
+            <button
+              onClick={onSimulate}
+              disabled={isSimulating}
+              className={`flex items-center justify-center gap-2 px-6 py-2.5 rounded-full
+                font-normal text-sm shadow-sm transition-all duration-300 w-48
+                ${isSimulating 
+                  ? 'bg-gray-100 text-gray-400 cursor-not-allowed' 
+                  : 'bg-blue-500 text-white hover:bg-blue-600 hover:shadow-md active:transform active:scale-[0.98]'}`}
+            >
+              {isSimulating ? (
+                <>
+                  <Timer className="w-4 h-4 animate-spin" />
+                  <span>Testing...</span>
+                </>
+              ) : (
+                <>
+                  <Activity className="w-4 h-4" />
+                  <span>Run Test</span>
+                </>
+              )}
+            </button>
+          </div>
         </div>
 
         {/* Right Side - Animation */}
@@ -261,27 +271,35 @@ function ResourceCard({
             <Icon className={`w-24 h-24 ${currentStatus.iconColor} transition-colors duration-500`} />
           </motion.div>
 
-          {/* Status Message */}
+          {/* Status Message and Timer */}
           {isSimulating && (
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center"
+              className="text-center space-y-3"
             >
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="inline-block bg-gray-50 px-4 py-1.5 rounded-full shadow-sm"
+              >
+                <CountdownTimer duration={duration} />
+              </motion.div>
+              
               <motion.p 
                 className={`text-xl font-bold mb-2 ${status === 'good' ? 'text-green-600' : 
                   status === 'warning' ? 'text-yellow-600' : 
                   status === 'critical' ? 'text-red-600' : 'text-gray-600'}`}
               >
-                {status === 'good' ? '✨ Optimal Performance' :
-                 status === 'warning' ? '⚠️ Performance Alert' :
-                 status === 'critical' ? '🚨 Critical Warning!' : '🔄 Monitoring...'}
+                {status === 'good' ? 'Simulating optimal resource patterns' :
+                 status === 'warning' ? 'Testing warning threshold responses' :
+                 status === 'critical' ? 'Validating critical state handling' :
+                 'Initializing observability simulation...'}
               </motion.p>
               <p className="text-sm text-gray-600">
-                {status === 'good' ? 'System is running smoothly and efficiently' :
-                 status === 'warning' ? 'Resource usage is approaching critical levels' :
-                 status === 'critical' ? 'Immediate action required - System at risk!' :
-                 'Analyzing system metrics...'}
+                {status === 'good' ? '✨ Normal Load Test' :
+                 status === 'warning' ? '⚠️ High Load Test' :
+                 status === 'critical' ? '🚨 Overload Test' : '🔄 Preparing Test...'}
               </p>
             </motion.div>
           )}
@@ -640,12 +658,12 @@ function Dashboard() {
   };
 
   const tabs = [
-    { key: 'memory' as const, label: 'Memory', icon: MemoryStick },
-    { key: 'cpu' as const, label: 'CPU', icon: Cpu },
-    { key: 'disk' as const, label: 'Disk', icon: HardDrive },
-    { key: 'logs' as const, label: 'Logs', icon: ScrollText },
-    { key: 'metrics' as const, label: 'Metrics', icon: LineChart },
-    { key: 'traces' as const, label: 'Traces', icon: Network }
+    { key: 'memory' as const, label: 'Memory Tests', icon: MemoryStick },
+    { key: 'cpu' as const, label: 'CPU Tests', icon: Cpu },
+    { key: 'disk' as const, label: 'Disk Tests', icon: HardDrive },
+    { key: 'logs' as const, label: 'Log Patterns', icon: ScrollText },
+    { key: 'metrics' as const, label: 'Metric Patterns', icon: LineChart },
+    { key: 'traces' as const, label: 'Trace Patterns', icon: Network }
   ];
 
   return (
@@ -660,10 +678,10 @@ function Dashboard() {
               </div>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">
-                  Observability Dashboard
+                  AWS Observability Simulator
                 </h1>
                 <p className="text-sm text-gray-600">
-                  Monitor and test your system's observability features
+                  Test and validate your observability patterns
                 </p>
               </div>
             </div>
@@ -689,7 +707,7 @@ function Dashboard() {
       <main className="max-w-7xl mx-auto py-8 px-4 lg:px-8 min-h-[calc(100vh-12rem)]">
         {activeTab === 'memory' && (
           <ResourceCard
-            title="Memory Usage"
+            title="Memory Test"
             icon={MemoryStick}
             percentage={resourceStates.memory.percentage}
             duration={resourceStates.memory.duration}
@@ -703,7 +721,7 @@ function Dashboard() {
 
         {activeTab === 'cpu' && (
           <ResourceCard
-            title="CPU Usage"
+            title="CPU Test"
             icon={Cpu}
             percentage={resourceStates.cpu.percentage}
             duration={resourceStates.cpu.duration}
@@ -717,7 +735,7 @@ function Dashboard() {
 
         {activeTab === 'disk' && (
           <ResourceCard
-            title="Disk Usage"
+            title="Disk Test"
             icon={HardDrive}
             percentage={resourceStates.disk.percentage}
             duration={resourceStates.disk.duration}
@@ -801,6 +819,34 @@ function App() {
     <Dashboard />
   ) : (
     <HomePage onStartExploring={() => setShowDashboard(true)} />
+  );
+}
+
+function CountdownTimer({ duration }: { duration: string }) {
+  const [timeLeft, setTimeLeft] = useState(duration);
+
+  useEffect(() => {
+    const [minutes, seconds] = duration.split(':').map(Number);
+    let totalSeconds = minutes * 60 + seconds;
+
+    const timer = setInterval(() => {
+      if (totalSeconds > 0) {
+        totalSeconds -= 1;
+        const mins = Math.floor(totalSeconds / 60);
+        const secs = totalSeconds % 60;
+        setTimeLeft(`${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`);
+      } else {
+        clearInterval(timer);
+      }
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [duration]);
+
+  return (
+    <div className="font-mono text-sm text-gray-600">
+      {timeLeft}
+    </div>
   );
 }
 
