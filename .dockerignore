@@ -1,0 +1,38 @@
+# Version control
+.git
+.gitignore
+README.md
+simulator-home.png
+simulator-signals.png
+
+# Node.js
+frontend/node_modules
+frontend/dist
+frontend/coverage
+frontend/.env
+frontend/.env.*
+frontend/npm-debug.log*
+frontend/yarn-debug.log*
+frontend/yarn-error.log*
+
+# Python
+backend/__pycache__
+backend/*.pyc
+backend/*.pyo
+backend/*.pyd
+backend/.Python
+backend/env/
+backend/venv/
+backend/.env
+backend/.env.*
+backend/*.log
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
