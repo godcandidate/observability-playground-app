@@ -1,9 +1,10 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, send_from_directory
 from flask_cors import CORS
 import logging
+import os
 
 # Initialize Flask app
-app = Flask(__name__)
+app = Flask(__name__, static_folder='static')
 CORS(app)  # Enable CORS for all routes
 
 # Configure logging
@@ -26,6 +27,15 @@ app.route('/api/simulate/disk', methods=['POST'])(simulate_disk)
 app.route('/api/logs', methods=['POST'])(generate_logs)
 app.route('/api/metrics', methods=['POST'])(emit_metrics)
 app.route('/api/traces', methods=['POST'])(simulate_traces)
+
+# Serve React App
+@app.route('/', defaults={'path': ''})
+@app.route('/<path:path>')
+def serve(path):
+    if path != "" and os.path.exists(os.path.join(app.static_folder, path)):
+        return send_from_directory(app.static_folder, path)
+    else:
+        return send_from_directory(app.static_folder, 'index.html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=5000, debug=True)

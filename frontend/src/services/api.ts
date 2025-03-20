@@ -1,4 +1,5 @@
-const API_BASE_URL = 'http://localhost:5000/api';
+// API configuration
+const API_BASE_URL = import.meta.env.PROD ? '' : 'http://localhost:5000';
 
 interface SimulationParams {
   percentage: number;
@@ -6,7 +7,7 @@ interface SimulationParams {
 }
 
 interface LogParams {
-  level: 'INFO' | 'WARN' | 'ERROR';
+  level: string;
   message: string;
   count: number;
 }
@@ -25,7 +26,7 @@ interface TraceParams {
 export const api = {
   // Resource simulation endpoints
   simulateMemory: async (params: SimulationParams) => {
-    const response = await fetch(`${API_BASE_URL}/simulate/memory`, {
+    const response = await fetch(`${API_BASE_URL}/api/simulate/memory`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
@@ -34,7 +35,7 @@ export const api = {
   },
 
   simulateCPU: async (params: SimulationParams) => {
-    const response = await fetch(`${API_BASE_URL}/simulate/cpu`, {
+    const response = await fetch(`${API_BASE_URL}/api/simulate/cpu`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
@@ -43,7 +44,7 @@ export const api = {
   },
 
   simulateDisk: async (params: SimulationParams) => {
-    const response = await fetch(`${API_BASE_URL}/simulate/disk`, {
+    const response = await fetch(`${API_BASE_URL}/api/simulate/disk`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
@@ -53,7 +54,7 @@ export const api = {
 
   // Observability endpoints
   generateLogs: async (params: LogParams) => {
-    const response = await fetch(`${API_BASE_URL}/logs`, {
+    const response = await fetch(`${API_BASE_URL}/api/logs`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
@@ -62,7 +63,7 @@ export const api = {
   },
 
   emitMetric: async (params: MetricParams) => {
-    const response = await fetch(`${API_BASE_URL}/metrics`, {
+    const response = await fetch(`${API_BASE_URL}/api/metrics`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
@@ -71,7 +72,7 @@ export const api = {
   },
 
   generateTraces: async (params: TraceParams) => {
-    const response = await fetch(`${API_BASE_URL}/traces`, {
+    const response = await fetch(`${API_BASE_URL}/api/traces`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(params)
