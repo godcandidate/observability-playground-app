@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
 
     # Add a conditional input for deployment
-    if: ${{ github.event.inputs.deploy_to_docker_hub == 'yes' || github.ref == 'refs/heads/master' }}
+    if: ${{ github.event.inputs.deploy_to_docker_hub == 'yes' || github.ref == 'refs/heads/prometheus' }}
 
     steps:
       - name: Check out code
