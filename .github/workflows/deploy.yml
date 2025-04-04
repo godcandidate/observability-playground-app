@@ -28,7 +28,7 @@ jobs:
 
       - name: Build, tag, and push image to Docker Hub
         env:
-          DOCKER_HUB_REPOSITORY: ${{ secrets.DOCKER_HUB_USERNAME }}/obs-sim-app
+          DOCKER_HUB_REPOSITORY: ${{ secrets.DOCKER_USERNAME }}/obs-sim-app
         run: |
           docker build -t $DOCKER_HUB_REPOSITORY:${{ env.timestamp }} .
           docker push $DOCKER_HUB_REPOSITORY:${{ env.timestamp }}
