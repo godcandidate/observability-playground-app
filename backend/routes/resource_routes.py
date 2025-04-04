@@ -5,8 +5,12 @@ import logging
 import psutil
 import threading
 import os
+from routes.prometheus import REQUESTS
 
 logger = logging.getLogger(__name__)
+
+
+
 
 def calculate_status(percentage):
     """Calculate status based on percentage."""
@@ -18,6 +22,7 @@ def calculate_status(percentage):
         return "critical"
 
 def simulate_memory():
+    REQUESTS.labels(path='/api/simulate/memory').inc() # increases the counter
     try:
         data = request.json
         percentage = float(data.get('percentage', 50))  # Default 50%
@@ -56,6 +61,7 @@ def simulate_memory():
         return jsonify({"error": str(e)}), 500
 
 def simulate_cpu():
+    REQUESTS.labels(path='/api/simulate/cpu').inc() # increases the counter
     try:
         data = request.json
         percentage = float(data.get('percentage', 50))  # Default 50%
@@ -91,6 +97,7 @@ def simulate_cpu():
         return jsonify({"error": str(e)}), 500
 
 def simulate_disk():
+    REQUESTS.labels(path='/api/simulate/disk').inc() # increases the counter
     try:
         data = request.json
         percentage = float(data.get('percentage', 50))  # Default 50%

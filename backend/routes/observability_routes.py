@@ -2,10 +2,15 @@ from flask import jsonify, request
 import logging
 import random
 import time
+from routes.prometheus import REQUESTS
 
 logger = logging.getLogger(__name__)
 
+
+
+
 def generate_logs():
+    REQUESTS.labels(path='/api/logs').inc() # increases the counter
     try:
         data = request.json
         level = data.get('level', 'INFO').upper()
@@ -34,6 +39,7 @@ def generate_logs():
         return jsonify({"error": str(e)}), 500
 
 def emit_metrics():
+    REQUESTS.labels(path='/api/metrics').inc() # increases the counter
     try:
         data = request.json
         metric_name = data.get('name', 'custom_metric')
@@ -56,6 +62,7 @@ def emit_metrics():
         return jsonify({"error": str(e)}), 500
 
 def simulate_traces():
+    REQUESTS.labels(path='/api/traces').inc() # increases the counter
     try:
         data = request.json
         num_services = int(data.get('services', 3))
